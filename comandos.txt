@@ -1,0 +1,15 @@
+Ahora ya puedes hablarle así al LLM de Cursor:
+
+“Checkpoint: Nginx en 80 con Apache en 8080 (tags: nginx apache) — listo para Certbot”
+
+“Guardar hito: SSL activado en mgcomputacion.com (tags: certbot https)”
+
+“Backup completo: antes de modificar phpMyAdmin”
+
+“Mostrar checkpoints recientes”
+
+“Ver checkpoint: 20250917-104500_nginx-80-apache-8080”
+
+“Activar protocolo MGComputacion — verificar estado actual”
+
+El LLM traducirá esto directamente a los alias (ck, hito, bk, cklist, ckshow, ctx).
