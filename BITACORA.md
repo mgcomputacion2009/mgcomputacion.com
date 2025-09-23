@@ -182,3 +182,16 @@ CONCLUSIONES:
 
 ### Siguiente checkpoint
 - Webhook recibe 200 OK desde AutoResponder con validación de token/firma activa y evento registrado en .
+---
+## 23 de September de 2025 - 10:10:50
+
+### Avance
+- Webhook AutoResponder conectado y estable.
+- Respuesta en formato oficial con campo replies.
+- Nginx con log personalizado ar_log y Authorization passthrough.
+
+### Evidencia rápida
+- 200 desde dispositivo Android (AutoResponder) y curl de verificación.
+
+### Próximos pasos
+- Activar HMAC (opcional) cuando lo indiques.
