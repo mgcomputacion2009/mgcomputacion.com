@@ -128,3 +128,17 @@ CONCLUSIONES:
 ```
 
 ---
+
+## 2025-09-23 — Checkpoint: Orquestador conectado (mock)
+### Avance
+- Webhook orquestado → Router (stub) → Dispatcher (stub) → Módulo (mock) → Redactor (stub)
+- Eventos mínimos registrados en /tmp/events.log
+### Pendientes inmediatos (3)
+1) Conectar verificación de cliente (módulo sesiones/clientes) → abrir/validar session_id
+2) Añadir multi-tenant real por numero_wa (cargar config de compañía desde DB)
+3) Endpoint /v1/datos/* real (leer MySQL o endpoint remoto)
+### Riesgos
+- Desfase entre contrato y mocks si cambiamos entidades
+### Siguiente checkpoint
+- “Sesiones + verificación de cliente” operativos (mock → real)
+
