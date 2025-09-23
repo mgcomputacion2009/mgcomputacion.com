@@ -3,6 +3,23 @@
 Registro de avances y decisiones del proyecto MGComputacion.
 
 ---
+## 23 de September de 2025 - 08:48:03
+
+### Resumen del avance
+- cd /var/www/mgcomputacion
+- git push --set-upstream origin dev
+- CONEXION CON AUTORRESPODER AUN FALLA AUTENTICACION
+
+### Pendientes inmediatos
+
+
+### Riesgos
+
+
+### Siguiente checkpoint
+
+
+---
 ## 23 de September de 2025 - 04:10:45
 
 ### Avance
@@ -142,3 +159,26 @@ CONCLUSIONES:
 ### Siguiente checkpoint
 - “Sesiones + verificación de cliente” operativos (mock → real)
 
+
+---
+## 23 de septiembre de 2025 - 08:48:03
+
+### Resumen del avance
+- 
+- Branch 'dev' set up to track remote branch 'dev' from 'origin'.
+- Conexión con AutoResponder aún falla en autenticación (HTTPS)
+
+### Pendientes inmediatos
+- Probar webhook local con  y header  para descartar payload inválido.
+- Confirmar que Nginx reenvía  y  al backend.
+- Verificar cadena TLS completa (cert intermedio) y que el dominio responde con TLS 1.2+.
+- Activar logs detallados (Nginx + Gunicorn) y capturar el request real que llega desde AutoResponder.
+- Validar token/secret (sin espacios extra) y, si aplica, la firma HMAC del cuerpo crudo.
+
+### Riesgos
+- Desfase entre el contrato del webhook y lo que realmente envía AutoResponder.
+- Pérdida del header  por proxy o librería.
+- Token mal formateado (espacios o guiones bajos) o secreto equivocado.
+
+### Siguiente checkpoint
+- Webhook recibe 200 OK desde AutoResponder con validación de token/firma activa y evento registrado en .
