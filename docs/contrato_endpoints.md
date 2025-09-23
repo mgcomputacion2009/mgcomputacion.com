@@ -11,6 +11,7 @@ Especificación detallada de endpoints REST para el sistema de mensajería intel
 - **Autenticación**: Bearer Token en header `Authorization`
 - **Tiempo máximo de respuesta**: 500ms
 - **Encoding**: UTF-8
+- **Paginación**: Límite de 20 items por defecto, máximo 100
 
 ## Headers Comunes
 
@@ -36,14 +37,15 @@ GET /health
 ```json
 {
   "status": "healthy",
-  "timestamp": "2025-09-23T03:30:00Z",
+  "timestamp": "2025-09-23T04:00:00Z",
   "version": "1.0.0",
   "services": {
     "database": "connected",
     "redis": "connected",
     "llm": "available"
   },
-  "uptime": "5d 16h 30m"
+  "uptime": "5d 16h 30m",
+  "response_time": "12ms"
 }
 ```
 
@@ -51,7 +53,7 @@ GET /health
 ```json
 {
   "status": "unhealthy",
-  "timestamp": "2025-09-23T03:30:00Z",
+  "timestamp": "2025-09-23T04:00:00Z",
   "errors": [
     {
       "service": "database",
@@ -62,7 +64,7 @@ GET /health
 }
 ```
 
-**Tiempo esperado**: < 100ms
+**Tiempo objetivo**: < 100ms
 
 ---
 
@@ -78,7 +80,13 @@ GET /health
   "compania_id": 1,
   "filtros": {
     "categoria": "desktop",
-    "disponible": true
+    "disponible": true,
+    "precio_min": 500,
+    "precio_max": 2000
+  },
+  "paginacion": {
+    "limite": 20,
+    "offset": 0
   }
 }
 ```
@@ -91,12 +99,18 @@ GET /health
     "marca": "Dell",
     "modelo": "OptiPlex 7090",
     "total_items": 3,
+    "paginacion": {
+      "limite": 20,
+      "offset": 0,
+      "total": 3,
+      "paginas": 1
+    },
     "items": [
       {
-        "id": 101,
         "sku": "DELL-OP7090-I5-8GB",
         "nombre": "Dell OptiPlex 7090 Intel i5 8GB RAM",
         "precio": 850.00,
+        "origen": "local",
         "disponible": true,
         "stock": 5,
         "especificaciones": {
@@ -106,10 +120,10 @@ GET /health
         }
       },
       {
-        "id": 102,
         "sku": "DELL-OP7090-I7-16GB",
         "nombre": "Dell OptiPlex 7090 Intel i7 16GB RAM",
         "precio": 1200.00,
+        "origen": "local",
         "disponible": true,
         "stock": 3,
         "especificaciones": {
@@ -157,7 +171,7 @@ GET /health
 }
 ```
 
-**Tiempo esperado**: < 300ms
+**Tiempo objetivo**: < 300ms
 
 ---
 
@@ -220,7 +234,7 @@ GET /health
 }
 ```
 
-**Tiempo esperado**: < 200ms
+**Tiempo objetivo**: < 200ms
 
 ---
 
@@ -235,14 +249,12 @@ GET /health
   "compania_id": 1,
   "items": [
     {
-      "producto_id": 101,
-      "cantidad": 2,
-      "precio_unit": 850.00
+      "sku": "DELL-OP7090-I5-8GB",
+      "cantidad": 2
     },
     {
-      "producto_id": 102,
-      "cantidad": 1,
-      "precio_unit": 1200.00
+      "sku": "DELL-OP7090-I7-16GB",
+      "cantidad": 1
     }
   ],
   "metodo_pago": "transferencia",
@@ -267,7 +279,6 @@ GET /health
     "estado": "pendiente",
     "items": [
       {
-        "producto_id": 101,
         "sku": "DELL-OP7090-I5-8GB",
         "nombre": "Dell OptiPlex 7090 Intel i5 8GB RAM",
         "cantidad": 2,
@@ -275,7 +286,6 @@ GET /health
         "subtotal": 1700.00
       },
       {
-        "producto_id": 102,
         "sku": "DELL-OP7090-I7-16GB",
         "nombre": "Dell OptiPlex 7090 Intel i7 16GB RAM",
         "cantidad": 1,
@@ -288,7 +298,7 @@ GET /health
       "descuentos": 0.00,
       "total": 2900.00
     },
-    "creado_en": "2025-09-23T03:30:00Z",
+    "creado_en": "2025-09-23T04:00:00Z",
     "tiempo_estimado_entrega": "3-5 días hábiles"
   }
 }
@@ -305,7 +315,7 @@ GET /health
       "cliente_id": "Cliente no existe",
       "items": [
         {
-          "producto_id": 999,
+          "sku": "SKU-INEXISTENTE",
           "error": "Producto no disponible"
         }
       ]
@@ -324,7 +334,7 @@ GET /health
     "details": {
       "items_insuficientes": [
         {
-          "producto_id": 101,
+          "sku": "DELL-OP7090-I5-8GB",
           "solicitado": 10,
           "disponible": 5
         }
@@ -334,7 +344,7 @@ GET /health
 }
 ```
 
-**Tiempo esperado**: < 400ms
+**Tiempo objetivo**: < 400ms
 
 ---
 
@@ -371,7 +381,6 @@ GET /datos/pedido/PED-2025-0917-001234
     },
     "items": [
       {
-        "producto_id": 101,
         "sku": "DELL-OP7090-I5-8GB",
         "nombre": "Dell OptiPlex 7090 Intel i5 8GB RAM",
         "cantidad": 2,
@@ -379,7 +388,6 @@ GET /datos/pedido/PED-2025-0917-001234
         "subtotal": 1700.00
       },
       {
-        "producto_id": 102,
         "sku": "DELL-OP7090-I7-16GB",
         "nombre": "Dell OptiPlex 7090 Intel i7 16GB RAM",
         "cantidad": 1,
@@ -390,7 +398,7 @@ GET /datos/pedido/PED-2025-0917-001234
     "timeline": [
       {
         "estado": "pendiente",
-        "timestamp": "2025-09-23T03:30:00Z",
+        "timestamp": "2025-09-23T04:00:00Z",
         "descripcion": "Pedido creado"
       },
       {
@@ -404,7 +412,7 @@ GET /datos/pedido/PED-2025-0917-001234
         "descripcion": "Preparando envío"
       }
     ],
-    "creado_en": "2025-09-23T03:30:00Z",
+    "creado_en": "2025-09-23T04:00:00Z",
     "actualizado_en": "2025-09-23T08:00:00Z"
   }
 }
@@ -439,7 +447,7 @@ GET /datos/pedido/PED-2025-0917-001234
 }
 ```
 
-**Tiempo esperado**: < 200ms
+**Tiempo objetivo**: < 200ms
 
 ## Códigos de Error Estándar
 
@@ -468,6 +476,34 @@ GET /datos/pedido/PED-2025-0917-001234
 | `ACCESS_DENIED` | Sin permisos para el recurso |
 | `CLIENT_NOT_FOUND` | Cliente no encontrado |
 | `COMPANY_NOT_FOUND` | Compañía no encontrada |
+
+## Reglas de Paginación
+
+### Parámetros de Paginación
+- **limite**: Número de items por página (default: 20, máximo: 100)
+- **offset**: Número de items a saltar (default: 0)
+- **total**: Total de items disponibles
+- **paginas**: Número total de páginas
+
+### Ejemplo de Uso
+```json
+{
+  "paginacion": {
+    "limite": 20,
+    "offset": 40,
+    "total": 150,
+    "paginas": 8
+  }
+}
+```
+
+### Headers de Paginación
+```http
+X-Total-Count: 150
+X-Page-Count: 8
+X-Current-Page: 3
+X-Per-Page: 20
+```
 
 ## Consideraciones de Performance
 

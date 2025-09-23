@@ -14,19 +14,19 @@ Cada compañía que utiliza el sistema es un tenant independiente con:
 - Reglas de negocio específicas
 
 ### Identificación de Tenant
-El tenant se identifica por el **número de teléfono entrante** del cliente, que se mapea a una compañía específica.
+El tenant se identifica por el **número de WhatsApp Business** (`numero_wa`) que se mapea a una compañía específica.
 
-## Mapeo Número → Compañía
+## Mapeo Número WhatsApp → Compañía
 
 ### Tabla de Mapeo
 ```sql
 CREATE TABLE tenant_phone_mapping (
     id INT PRIMARY KEY AUTO_INCREMENT,
-    phone_pattern VARCHAR(20) NOT NULL,
+    numero_wa VARCHAR(20) NOT NULL,
     compania_id INT NOT NULL,
     priority INT DEFAULT 0,
     activo BOOLEAN DEFAULT TRUE,
-    creado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (compania_id) REFERENCES companias(id)
 );
 ```
@@ -36,7 +36,7 @@ CREATE TABLE tenant_phone_mapping (
 #### 1. Mapeo Exacto
 ```json
 {
-  "phone_pattern": "+5215512345678",
+  "numero_wa": "+5215512345678",
   "compania_id": 1,
   "priority": 100
 }
@@ -45,7 +45,7 @@ CREATE TABLE tenant_phone_mapping (
 #### 2. Mapeo por Prefijo
 ```json
 {
-  "phone_pattern": "+52155*",
+  "numero_wa": "+52155*",
   "compania_id": 2,
   "priority": 50
 }
@@ -54,7 +54,7 @@ CREATE TABLE tenant_phone_mapping (
 #### 3. Mapeo por Rango
 ```json
 {
-  "phone_pattern": "+5215512345XXX",
+  "numero_wa": "+5215512345XXX",
   "compania_id": 3,
   "priority": 75
 }
@@ -62,17 +62,17 @@ CREATE TABLE tenant_phone_mapping (
 
 ### Algoritmo de Selección
 ```python
-def seleccionar_tenant(numero_telefono):
+def seleccionar_tenant(numero_wa):
     """
-    Selecciona el tenant basado en el número de teléfono entrante
+    Selecciona el tenant basado en el número de WhatsApp entrante
     """
     # 1. Buscar mapeo exacto
-    mapeo_exacto = buscar_mapeo_exacto(numero_telefono)
+    mapeo_exacto = buscar_mapeo_exacto(numero_wa)
     if mapeo_exacto:
         return mapeo_exacto.compania_id
     
     # 2. Buscar por patrones (ordenado por prioridad)
-    patrones = buscar_patrones(numero_telefono)
+    patrones = buscar_patrones(numero_wa)
     if patrones:
         return patrones[0].compania_id
     
@@ -80,146 +80,72 @@ def seleccionar_tenant(numero_telefono):
     return obtener_tenant_default()
 ```
 
-## Carga de Configuración por Compañía
+## Carga de Prompts y Plantillas por Compañía
 
-### 1. Prompts y Plantillas
-
-#### Estructura de Archivos
+### 1. Estructura de Archivos
 ```
 prompts/
 ├── sistema/
-│   ├── default/
-│   │   ├── saludo.md
-│   │   ├── despedida.md
-│   │   └── error.md
-│   └── compania_1/
-│       ├── saludo.md
-│       ├── despedida.md
-│       └── error.md
+│   ├── v1/
+│   │   ├── default/
+│   │   │   ├── saludo.md
+│   │   │   ├── despedida.md
+│   │   │   └── error.md
+│   │   └── compania_1/
+│   │       ├── saludo.md
+│   │       ├── despedida.md
+│   │       └── error.md
+│   └── v2/
+│       ├── default/
+│       └── compania_1/
 ├── intent_detection/
-│   ├── default/
-│   │   └── clasificador.md
-│   └── compania_1/
-│       └── clasificador.md
+│   ├── v1/
+│   │   ├── default/
+│   │   └── compania_1/
+│   └── v2/
 └── plantillas_respuesta/
-    ├── default/
-    │   ├── consulta_precios.md
-    │   └── crear_pedido.md
-    └── compania_1/
-        ├── consulta_precios.md
-        └── crear_pedido.md
+    ├── v1/
+    └── v2/
 ```
 
-#### Carga Dinámica
+### 2. Carga Dinámica con Versionado
 ```python
-def cargar_prompt(compania_id, tipo_prompt, nombre_archivo):
+def cargar_prompt(compania_id, tipo_prompt, nombre_archivo, version="v1"):
     """
-    Carga prompt específico de la compañía o fallback a default
+    Carga prompt específico de la compañía con versionado
     """
     # 1. Intentar cargar desde directorio de la compañía
-    ruta_compania = f"prompts/{tipo_prompt}/compania_{compania_id}/{nombre_archivo}"
+    ruta_compania = f"prompts/{tipo_prompt}/{version}/compania_{compania_id}/{nombre_archivo}"
     if archivo_existe(ruta_compania):
         return cargar_archivo(ruta_compania)
     
-    # 2. Fallback a default
-    ruta_default = f"prompts/{tipo_prompt}/default/{nombre_archivo}"
-    return cargar_archivo(ruta_default)
+    # 2. Fallback a default de la versión
+    ruta_default = f"prompts/{tipo_prompt}/{version}/default/{nombre_archivo}"
+    if archivo_existe(ruta_default):
+        return cargar_archivo(ruta_default)
+    
+    # 3. Fallback a versión anterior
+    if version != "v1":
+        return cargar_prompt(compania_id, tipo_prompt, nombre_archivo, "v1")
+    
+    # 4. Error si no se encuentra
+    raise PromptNotFoundError(f"Prompt no encontrado: {tipo_prompt}/{nombre_archivo}")
 ```
 
-### 2. Configuración de Sistema
-
-#### Tabla de Configuración
-```sql
-CREATE TABLE tenant_config (
-    id INT PRIMARY KEY AUTO_INCREMENT,
-    compania_id INT NOT NULL,
-    clave VARCHAR(100) NOT NULL,
-    valor TEXT NOT NULL,
-    tipo ENUM('string', 'number', 'boolean', 'json') NOT NULL,
-    descripcion TEXT,
-    creado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (compania_id) REFERENCES companias(id),
-    UNIQUE KEY unique_config (compania_id, clave)
-);
-```
-
-#### Configuraciones por Compañía
+### 3. Configuración de Versión por Compañía
 ```json
 {
   "compania_id": 1,
-  "configuraciones": {
-    "llm_model": "gpt-4",
-    "max_sesiones_activas": 100,
-    "tiempo_timeout": 300,
-    "idioma_default": "es",
-    "moneda": "MXN",
-    "zona_horaria": "America/Mexico_City",
-    "horario_atencion": {
-      "inicio": "09:00",
-      "fin": "18:00",
-      "dias": ["lunes", "martes", "miercoles", "jueves", "viernes"]
-    }
-  }
+  "version_prompts": {
+    "sistema": "v2",
+    "intent_detection": "v1",
+    "plantillas_respuesta": "v2"
+  },
+  "fecha_actualizacion": "2025-09-23T04:00:00Z"
 }
 ```
 
-### 3. Flags de Funcionalidad
-
-#### Tabla de Flags
-```sql
-CREATE TABLE tenant_flags (
-    id INT PRIMARY KEY AUTO_INCREMENT,
-    compania_id INT NOT NULL,
-    flag_name VARCHAR(100) NOT NULL,
-    enabled BOOLEAN DEFAULT FALSE,
-    configuracion JSON,
-    creado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (compania_id) REFERENCES companias(id),
-    UNIQUE KEY unique_flag (compania_id, flag_name)
-);
-```
-
-#### Flags Disponibles
-```json
-{
-  "flags": {
-    "menu_productos": {
-      "enabled": true,
-      "configuracion": {
-        "categorias_visibles": ["laptops", "desktops", "accesorios"],
-        "mostrar_precios": true,
-        "filtros_disponibles": ["marca", "precio", "categoria"]
-      }
-    },
-    "cierre_venta": {
-      "enabled": true,
-      "configuracion": {
-        "metodos_pago": ["transferencia", "efectivo", "tarjeta"],
-        "requerir_direccion": true,
-        "confirmacion_automatica": false
-      }
-    },
-    "envio_datos_pago": {
-      "enabled": false,
-      "configuracion": {
-        "metodo_envio": "whatsapp",
-        "formato": "pdf",
-        "incluir_instrucciones": true
-      }
-    },
-    "soporte_humano": {
-      "enabled": true,
-      "configuracion": {
-        "horario_disponible": "24/7",
-        "transferencia_automatica": false,
-        "tiempo_espera_maximo": 300
-      }
-    }
-  }
-}
-```
-
-## Aislamiento de Datos
+## Aislamiento de Datos y Logs
 
 ### 1. Aislamiento a Nivel de Base de Datos
 
@@ -250,11 +176,11 @@ class TenantMiddleware:
         self.get_response = get_response
     
     def __call__(self, request):
-        # Extraer número de teléfono del request
-        numero_telefono = extraer_telefono(request)
+        # Extraer número de WhatsApp del request
+        numero_wa = extraer_numero_wa(request)
         
         # Identificar tenant
-        compania_id = seleccionar_tenant(numero_telefono)
+        compania_id = seleccionar_tenant(numero_wa)
         
         # Establecer en el contexto de la request
         request.tenant_id = compania_id
@@ -322,11 +248,146 @@ class SessionContext:
         self.tenant_prompts = cargar_prompts(compania_id)
         self.tenant_flags = cargar_flags(compania_id)
     
-    def get_prompt(self, tipo, nombre):
-        return cargar_prompt(self.compania_id, tipo, nombre)
+    def get_prompt(self, tipo, nombre, version=None):
+        if not version:
+            version = self.tenant_config.get(f'version_prompts.{tipo}', 'v1')
+        return cargar_prompt(self.compania_id, tipo, nombre, version)
     
     def is_flag_enabled(self, flag_name):
         return self.tenant_flags.get(flag_name, {}).get('enabled', False)
+```
+
+## Flags de Features por Compañía
+
+### 1. Tabla de Flags
+```sql
+CREATE TABLE tenant_flags (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    compania_id INT NOT NULL,
+    flag_name VARCHAR(100) NOT NULL,
+    enabled BOOLEAN DEFAULT FALSE,
+    configuracion JSON,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (compania_id) REFERENCES companias(id),
+    UNIQUE KEY unique_flag (compania_id, flag_name)
+);
+```
+
+### 2. Flags Disponibles
+```json
+{
+  "flags": {
+    "menu_productos": {
+      "enabled": true,
+      "configuracion": {
+        "categorias_visibles": ["laptops", "desktops", "accesorios"],
+        "mostrar_precios": true,
+        "filtros_disponibles": ["marca", "precio", "categoria"]
+      }
+    },
+    "cierre_venta": {
+      "enabled": true,
+      "configuracion": {
+        "metodos_pago": ["transferencia", "efectivo", "tarjeta"],
+        "requerir_direccion": true,
+        "confirmacion_automatica": false
+      }
+    },
+    "envio_datos_pago": {
+      "enabled": false,
+      "configuracion": {
+        "metodo_envio": "whatsapp",
+        "formato": "pdf",
+        "incluir_instrucciones": true
+      }
+    },
+    "panel_activo": {
+      "enabled": true,
+      "configuracion": {
+        "acceso_24_7": true,
+        "notificaciones_push": true,
+        "dashboard_personalizado": true
+      }
+    }
+  }
+}
+```
+
+## Estrategia de Versionado de Prompts
+
+### 1. Estructura de Versiones
+```
+prompts/
+├── sistema/
+│   ├── v1/          # Versión estable
+│   ├── v2/          # Versión en desarrollo
+│   └── v3/          # Versión experimental
+├── intent_detection/
+│   ├── v1/
+│   └── v2/
+└── plantillas_respuesta/
+    ├── v1/
+    └── v2/
+```
+
+### 2. Configuración de Versión por Compañía
+```json
+{
+  "compania_id": 1,
+  "version_prompts": {
+    "sistema": "v2",
+    "intent_detection": "v1",
+    "plantillas_respuesta": "v2"
+  },
+  "fecha_actualizacion": "2025-09-23T04:00:00Z",
+  "version_anterior": {
+    "sistema": "v1",
+    "intent_detection": "v1",
+    "plantillas_respuesta": "v1"
+  }
+}
+```
+
+### 3. Migración de Versiones
+```python
+def migrar_prompts_tenant(compania_id, tipo_prompt, version_anterior, version_nueva):
+    """
+    Migra prompts de una versión a otra para un tenant específico
+    """
+    # 1. Crear backup de la versión actual
+    crear_backup_prompts(compania_id, tipo_prompt, version_anterior)
+    
+    # 2. Copiar prompts de default a tenant
+    copiar_prompts_default(compania_id, tipo_prompt, version_nueva)
+    
+    # 3. Aplicar personalizaciones específicas
+    aplicar_personalizaciones(compania_id, tipo_prompt, version_nueva)
+    
+    # 4. Actualizar configuración
+    actualizar_configuracion_version(compania_id, tipo_prompt, version_nueva)
+    
+    # 5. Validar prompts
+    validar_prompts_tenant(compania_id, tipo_prompt, version_nueva)
+```
+
+### 4. Rollback de Versiones
+```python
+def rollback_prompts_tenant(compania_id, tipo_prompt, version_objetivo):
+    """
+    Hace rollback de prompts a una versión anterior
+    """
+    # 1. Validar que la versión objetivo existe
+    if not version_existe(tipo_prompt, version_objetivo):
+        raise VersionNotFoundError(f"Versión {version_objetivo} no encontrada")
+    
+    # 2. Restaurar desde backup
+    restaurar_backup_prompts(compania_id, tipo_prompt, version_objetivo)
+    
+    # 3. Actualizar configuración
+    actualizar_configuracion_version(compania_id, tipo_prompt, version_objetivo)
+    
+    # 4. Notificar cambio
+    notificar_cambio_version(compania_id, tipo_prompt, version_objetivo)
 ```
 
 ## Reglas de Negocio por Tenant
@@ -362,28 +423,11 @@ def procesar_con_llm(mensaje, compania_id):
     # Usar modelo específico del tenant
     modelo = config.get('llm_model', 'gpt-3.5-turbo')
     
-    # Usar prompts específicos del tenant
-    prompt_sistema = prompts.get('sistema', 'saludo')
+    # Usar prompts específicos del tenant con versionado
+    version = config.get('version_prompts.sistema', 'v1')
+    prompt_sistema = prompts.get('sistema', 'saludo', version)
     
     return llamar_llm(mensaje, modelo, prompt_sistema)
-```
-
-### 3. Generación de Respuestas
-```python
-def generar_respuesta(tipo_respuesta, datos, compania_id):
-    """
-    Genera respuesta usando plantillas del tenant
-    """
-    plantillas = cargar_plantillas(compania_id)
-    flags = cargar_flags(compania_id)
-    
-    # Verificar si la funcionalidad está habilitada
-    if not flags.get(tipo_respuesta, {}).get('enabled', False):
-        return generar_respuesta_fallback(tipo_respuesta)
-    
-    # Usar plantilla específica del tenant
-    plantilla = plantillas.get(tipo_respuesta)
-    return renderizar_plantilla(plantilla, datos)
 ```
 
 ## Monitoreo y Auditoría
@@ -398,7 +442,8 @@ def obtener_metricas_tenant(compania_id, periodo):
         'sesiones_activas': contar_sesiones_activas(compania_id),
         'tiempo_respuesta_promedio': calcular_tiempo_respuesta(compania_id, periodo),
         'conversion_pedidos': calcular_conversion(compania_id, periodo),
-        'errores_por_hora': contar_errores(compania_id, periodo)
+        'errores_por_hora': contar_errores(compania_id, periodo),
+        'version_prompts_activa': obtener_version_prompts(compania_id)
     }
 ```
 

@@ -14,11 +14,10 @@ Esquema de base de datos para el sistema de mensajería inteligente MGComputacio
 | id | INT PRIMARY KEY AUTO_INCREMENT | Identificador único |
 | nombre | VARCHAR(255) NOT NULL | Nombre de la compañía |
 | numero_wa | VARCHAR(20) UNIQUE | Número de WhatsApp Business |
-| llaves_api | JSON | Configuración de APIs externas (OpenAI, etc.) |
-| modo_venta | ENUM('directo', 'cotizacion', 'hibrido') | Modalidad de venta |
 | flags | JSON | Configuraciones adicionales y flags |
-| creado_en | TIMESTAMP DEFAULT CURRENT_TIMESTAMP | Fecha de creación |
-| actualizado_en | TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP | Última actualización |
+| origen_catalogo | ENUM('local', 'remoto', 'hibrido') | Origen del catálogo de productos |
+| created_at | TIMESTAMP DEFAULT CURRENT_TIMESTAMP | Fecha de creación |
+| updated_at | TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP | Última actualización |
 
 ### 2. clientes
 **Propósito**: Base de datos de clientes por compañía
@@ -31,9 +30,8 @@ Esquema de base de datos para el sistema de mensajería inteligente MGComputacio
 | email | VARCHAR(255) | Correo electrónico |
 | compania_id | INT NOT NULL | Referencia a compañía |
 | estado_verificacion | ENUM('pendiente', 'verificado', 'rechazado') | Estado de verificación |
-| datos_adicionales | JSON | Información extra del cliente |
-| creado_en | TIMESTAMP DEFAULT CURRENT_TIMESTAMP | Fecha de registro |
-| ultima_interaccion | TIMESTAMP | Última actividad |
+| created_at | TIMESTAMP DEFAULT CURRENT_TIMESTAMP | Fecha de registro |
+| updated_at | TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP | Última actualización |
 
 ### 3. sesiones
 **Propósito**: Control de sesiones de chat activas
@@ -45,10 +43,8 @@ Esquema de base de datos para el sistema de mensajería inteligente MGComputacio
 | compania_id | INT NOT NULL | Referencia a compañía |
 | estado | ENUM('activa', 'pausada', 'cerrada', 'transferida') | Estado de la sesión |
 | intencion_actual | VARCHAR(100) | Intención detectada actualmente |
-| contexto | JSON | Contexto de la conversación |
 | opened_at | TIMESTAMP DEFAULT CURRENT_TIMESTAMP | Inicio de sesión |
 | closed_at | TIMESTAMP NULL | Cierre de sesión |
-| agente_asignado | VARCHAR(100) | Agente o bot asignado |
 
 ### 4. productos
 **Propósito**: Catálogo de productos por compañía
@@ -62,11 +58,7 @@ Esquema de base de datos para el sistema de mensajería inteligente MGComputacio
 | precio | DECIMAL(10,2) NOT NULL | Precio base |
 | compania_id | INT NOT NULL | Referencia a compañía |
 | origen_datos | ENUM('local', 'remoto') | Fuente de los datos |
-| descripcion | TEXT | Descripción detallada |
-| categoria | VARCHAR(100) | Categoría del producto |
-| stock_disponible | INT DEFAULT 0 | Stock disponible |
-| activo | BOOLEAN DEFAULT TRUE | Producto activo |
-| creado_en | TIMESTAMP DEFAULT CURRENT_TIMESTAMP | Fecha de creación |
+| updated_at | TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP | Última actualización |
 
 ### 5. pedidos
 **Propósito**: Órdenes de compra generadas
@@ -79,11 +71,8 @@ Esquema de base de datos para el sistema de mensajería inteligente MGComputacio
 | total | DECIMAL(10,2) NOT NULL | Total del pedido |
 | codigo_pedido | VARCHAR(50) UNIQUE | Código único del pedido |
 | estado | ENUM('pendiente', 'confirmado', 'en_proceso', 'enviado', 'entregado', 'cancelado') | Estado del pedido |
-| metodo_pago | VARCHAR(50) | Método de pago |
-| direccion_entrega | TEXT | Dirección de entrega |
-| notas | TEXT | Notas adicionales |
 | creado_en | TIMESTAMP DEFAULT CURRENT_TIMESTAMP | Fecha de creación |
-| actualizado_en | TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP | Última actualización |
+| updated_at | TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP | Última actualización |
 
 ### 6. pedido_items
 **Propósito**: Items individuales de cada pedido
@@ -95,7 +84,6 @@ Esquema de base de datos para el sistema de mensajería inteligente MGComputacio
 | producto_id | INT NOT NULL | Referencia a producto |
 | cantidad | INT NOT NULL | Cantidad solicitada |
 | precio_unit | DECIMAL(10,2) NOT NULL | Precio unitario al momento de la compra |
-| subtotal | DECIMAL(10,2) NOT NULL | Subtotal (cantidad × precio_unit) |
 
 ### 7. config
 **Propósito**: Configuraciones del sistema por compañía
@@ -103,12 +91,9 @@ Esquema de base de datos para el sistema de mensajería inteligente MGComputacio
 | Campo | Tipo | Descripción |
 |-------|------|-------------|
 | id | INT PRIMARY KEY AUTO_INCREMENT | Identificador único |
+| compania_id | INT | Referencia a compañía (NULL = global) |
 | clave | VARCHAR(100) NOT NULL | Clave de configuración |
 | valor | TEXT | Valor de la configuración |
-| compania_id | INT | Referencia a compañía (NULL = global) |
-| tipo | ENUM('string', 'number', 'boolean', 'json') | Tipo de dato |
-| descripcion | TEXT | Descripción de la configuración |
-| creado_en | TIMESTAMP DEFAULT CURRENT_TIMESTAMP | Fecha de creación |
 
 ## Relaciones (Foreign Keys)
 
@@ -174,10 +159,9 @@ SELECT
     p.nombre,
     p.marca,
     p.precio,
-    p.stock_disponible
+    p.origen_datos
 FROM productos p
 WHERE p.compania_id = ?
-  AND p.activo = TRUE
   AND (
     p.nombre LIKE CONCAT('%', ?, '%') 
     OR p.sku LIKE CONCAT('%', ?, '%')

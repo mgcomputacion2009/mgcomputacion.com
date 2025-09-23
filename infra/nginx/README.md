@@ -1,0 +1,3 @@
+# nginx
+
+Configuraciones de Nginx
