@@ -46,3 +46,5 @@ SELECT id, compania_id, phone, message_type, priority, status, created_at
 FROM outbox_messages 
 WHERE compania_id = 1;
 
+
+

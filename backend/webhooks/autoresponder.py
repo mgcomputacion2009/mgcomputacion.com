@@ -203,12 +203,16 @@ async def autoresponder_webhook(
                 events_repo.log_event(cid, session_id, "response_generated", {"len": len(reply or "")})
             except Exception:
                 logger.warning("[AR] no se pudo registrar evento response_generated")
+            # Contar mensajes en cola (simulado por ahora)
+            # TODO: Implementar contador real de mensajes pendientes
+            queued_count = 1  # Por ahora siempre 1, después implementar contador real
+            
             # Responder como objeto con arreglo 'replies' y objetos {message, queued}
             return JSONResponse(content={
                 "replies": [
                     {
                         "message": reply,
-                        "queued": True
+                        "queued": queued_count
                     }
                 ]
             })
@@ -218,7 +222,7 @@ async def autoresponder_webhook(
             # Responder con objeto y arreglo vacío para compatibilidad
             return JSONResponse(content={
                 "replies": [],
-                "queued": False
+                "queued": 0
             }, status_code=400)
             
     except Exception as e:

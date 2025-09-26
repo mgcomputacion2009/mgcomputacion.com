@@ -264,3 +264,5 @@ send_whatsapp_message() {
 
 Para monitorear el estado de la cola, usar el endpoint `/outbox/status` que proporciona estadísticas en tiempo real del número de mensajes en cada estado.
 
+
+
