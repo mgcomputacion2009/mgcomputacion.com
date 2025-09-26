@@ -76,7 +76,7 @@
 ### Resumen del avance
 - Revertido commit problemático que causó conflictos en Java/AutoResponder
 - Eliminado run.py con Flask que causaba conflictos con FastAPI
-- Sistema funcionando correctamente con token DEV_TUSAM_MAIN
+- Sistema funcionando correctamente con device TUSAM_MAIN y token DEV_TUSAM_MAIN
 - Webhook respondiendo correctamente con tenant_authorized
 
 ### Pendientes inmediatos
