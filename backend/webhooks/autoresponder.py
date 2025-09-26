@@ -259,6 +259,33 @@ async def outbox_status():
         }
     }
 
+@router.get("/outbox/lease")
+@router.post("/outbox/lease")
+async def outbox_lease(limit: int = 5):
+    """
+    Endpoint para obtener mensajes del outbox (soporta GET y POST)
+    """
+    # Simular datos de mensajes en cola
+    return {
+        "ok": True,
+        "data": {
+            "messages": [
+                {
+                    "id": "msg_001",
+                    "content": "Mensaje de prueba 1",
+                    "queued": True
+                },
+                {
+                    "id": "msg_002", 
+                    "content": "Mensaje de prueba 2",
+                    "queued": True
+                }
+            ],
+            "total": 2,
+            "limit": limit
+        }
+    }
+
 @router.get("/_debug/resolve")
 async def debug_resolve_tenant(
     device: Optional[str] = None,
