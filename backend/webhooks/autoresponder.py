@@ -248,10 +248,15 @@ async def outbox_status():
     """
     Endpoint para verificar el estado del outbox (requerido por AutoResponder)
     """
+    # Simular datos de consulta como antes
     return {
         "ok": True,
-        "status": "active",
-        "message": "Outbox service is running"
+        "data": {
+            "pending_messages": 1,
+            "processed_today": 15,
+            "last_activity": "2025-09-26T14:30:00Z",
+            "status": "active"
+        }
     }
 
 @router.get("/_debug/resolve")
