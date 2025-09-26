@@ -68,3 +68,24 @@
 
 ### Siguiente checkpoint
 - Integración completa con AutoResponder real
+---
+## 26 de septiembre de 2025 - 09:22:05
+
+### Sistema restaurado
+
+### Resumen del avance
+- Revertido commit problemático que causó conflictos en Java/AutoResponder
+- Eliminado run.py con Flask que causaba conflictos con FastAPI
+- Sistema funcionando correctamente con token DEV_TUSAM_MAIN
+- Webhook respondiendo correctamente con tenant_authorized
+
+### Pendientes inmediatos
+- Monitorear estabilidad del sistema
+- Verificar que AutoResponder funcione sin problemas
+- Documentar configuración correcta de tokens
+
+### Riesgos
+- Ninguno identificado
+
+### Siguiente checkpoint
+- Sistema estable por 24 horas sin errores
