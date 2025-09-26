@@ -239,6 +239,17 @@ async def autoresponder_health():
         "status": "healthy"
     }
 
+@router.get("/outbox/status")
+async def outbox_status():
+    """
+    Endpoint para verificar el estado del outbox (requerido por AutoResponder)
+    """
+    return {
+        "ok": True,
+        "status": "active",
+        "message": "Outbox service is running"
+    }
+
 @router.get("/_debug/resolve")
 async def debug_resolve_tenant(
     device: Optional[str] = None,
