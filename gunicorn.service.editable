@@ -1,0 +1,19 @@
+[Unit]
+Description=Gunicorn MGComputacion FastAPI
+After=network.target
+
+[Service]
+User=www-data
+Group=www-data
+WorkingDirectory=/var/www/mgcomputacion
+EnvironmentFile=/var/www/mgcomputacion/.env
+ExecStart=/var/www/mgcomputacion/venv/bin/gunicorn \
+  -w 2 -k uvicorn.workers.UvicornWorker -b 127.0.0.1:8000 run:app
+Restart=always
+RestartSec=3
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=gunicorn
+
+[Install]
+WantedBy=multi-user.target
