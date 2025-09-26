@@ -89,3 +89,24 @@
 
 ### Siguiente checkpoint
 - Sistema estable por 24 horas sin errores
+---
+## 26 de septiembre de 2025 - 09:25:19
+
+### Formato JSON corregido
+
+### Resumen del avance
+- Corregido formato JSON de respuesta webhook para incluir "queued": true
+- Actualizado servicio Gunicorn para usar backend.api.main:app (FastAPI)
+- Webhook ahora devuelve formato correcto: {"replies": [{"message": "...", "queued": true}]}
+- Sistema funcionando correctamente con AutoResponder
+
+### Pendientes inmediatos
+- Verificar que AutoResponder procese correctamente el campo "queued"
+- Monitorear estabilidad del sistema
+- Documentar formato de respuesta estándar
+
+### Riesgos
+- Ninguno identificado
+
+### Siguiente checkpoint
+- AutoResponder procesando mensajes sin errores por 24 horas
