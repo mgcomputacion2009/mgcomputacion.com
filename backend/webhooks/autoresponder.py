@@ -203,17 +203,23 @@ async def autoresponder_webhook(
                 events_repo.log_event(cid, session_id, "response_generated", {"len": len(reply or "")})
             except Exception:
                 logger.warning("[AR] no se pudo registrar evento response_generated")
-            # Responder como objeto con arreglo 'replies' y objetos {message}
+            # Responder como objeto con arreglo 'replies' y objetos {message, queued}
             return JSONResponse(content={
                 "replies": [
-                    {"message": reply}
+                    {
+                        "message": reply,
+                        "queued": True
+                    }
                 ]
             })
         else:
             error_msg = resultado.get("error", "unknown_error") if resultado else "dispatcher_error"
             logger.error(f"Error en dispatcher: {error_msg}")
             # Responder con objeto y arreglo vacío para compatibilidad
-            return JSONResponse(content={"replies": []}, status_code=400)
+            return JSONResponse(content={
+                "replies": [],
+                "queued": False
+            }, status_code=400)
             
     except Exception as e:
         logger.error(f"Error inesperado en webhook AutoResponder: {str(e)}")
