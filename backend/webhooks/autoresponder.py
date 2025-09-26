@@ -252,7 +252,7 @@ async def outbox_status():
     return {
         "ok": True,
         "data": {
-            "pending_messages": 1,
+            "queued": 1,
             "processed_today": 15,
             "last_activity": "2025-09-26T14:30:00Z",
             "status": "active"
